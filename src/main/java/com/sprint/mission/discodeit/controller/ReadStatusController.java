@@ -1,71 +1,53 @@
 package com.sprint.mission.discodeit.controller;
 
-import com.sprint.mission.discodeit.common.ApiResponse;
+import com.sprint.mission.discodeit.controller.api.ReadStatusApi;
+import com.sprint.mission.discodeit.dto.data.ReadStatusDto;
 import com.sprint.mission.discodeit.dto.request.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.request.ReadStatusUpdateRequest;
-import com.sprint.mission.discodeit.dto.response.ReadStatusResponse;
-import com.sprint.mission.discodeit.entity.ReadStatus;
-import com.sprint.mission.discodeit.service.basic.BasicReadStatusService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
+import com.sprint.mission.discodeit.service.ReadStatusService;
 import java.util.List;
 import java.util.UUID;
-@Tag(name="ReadStatus", description = "Message 읽음 상태 API")
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/readStatuses")
-public class ReadStatusController {
-    private final BasicReadStatusService readStatusService;
+public class ReadStatusController implements ReadStatusApi {
 
-    public ReadStatusController(BasicReadStatusService readStatusService) {
-        this.readStatusService = readStatusService;
-    }
+  private final ReadStatusService readStatusService;
 
-    // 생성
-    @Operation(summary = "Message 읽음 상태 생성", operationId = "create_1")
-    @ApiResponses({
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Channel 또는 User를 찾을 수 없음"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "이미 읽음 상태가 존재함")
-    })
-    @RequestMapping(method= RequestMethod.POST)
-    public ResponseEntity<ReadStatusResponse> createReadStatus(
-            @Valid @RequestBody ReadStatusCreateRequest request) {
-        ReadStatus readStatus = readStatusService.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ReadStatusResponse.from(readStatus));
-    }
+  @PostMapping
+  public ResponseEntity<ReadStatusDto> create(@RequestBody ReadStatusCreateRequest request) {
+    ReadStatusDto createdReadStatus = readStatusService.create(request);
+    return ResponseEntity
+        .status(HttpStatus.CREATED)
+        .body(createdReadStatus);
+  }
 
-    // 조회
-    @Operation(summary = "User의 Message 읽음 상태 목록 조회", operationId = "findAllByUserId")
-    @ApiResponses({
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Message 읽음 상태 목록 조회 성공")
-    })
-    @RequestMapping(method= RequestMethod.GET)
-    public ResponseEntity<List<ReadStatusResponse>> getReadStatus(
-            @RequestParam("userId") UUID userId) {
-        List<ReadStatusResponse> readStatus = readStatusService.findAllByUserId(userId)
-                .stream().map(ReadStatusResponse::from).toList();
+  @PatchMapping(path = "{readStatusId}")
+  public ResponseEntity<ReadStatusDto> update(@PathVariable("readStatusId") UUID readStatusId,
+      @RequestBody ReadStatusUpdateRequest request) {
+    ReadStatusDto updatedReadStatus = readStatusService.update(readStatusId, request);
+    return ResponseEntity
+        .status(HttpStatus.OK)
+        .body(updatedReadStatus);
+  }
 
-        return ResponseEntity.ok(readStatus);
-    }
-
-    // 수정
-    @Operation(summary = "Message 읽음 상태 수정", operationId = "update_1")
-    @ApiResponses({
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Message 읽음 상태가 성공적으로 수정됨"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Message 읽음 상태를 찾을 수 없음"),
-    })
-    @RequestMapping(method= RequestMethod.PATCH)
-    public ResponseEntity<ReadStatusResponse> updateReadStatus(
-            @RequestPart("readStatusUpdateRequest") ReadStatusUpdateRequest request,
-            @RequestParam("readstatus-id") UUID readStatusId
-    ) {
-
-        ReadStatus readStatus = readStatusService.update(readStatusId, request);
-        return ResponseEntity.ok(ReadStatusResponse.from(readStatus));
-    }
+  @GetMapping
+  public ResponseEntity<List<ReadStatusDto>> findAllByUserId(@RequestParam("userId") UUID userId) {
+    List<ReadStatusDto> readStatuses = readStatusService.findAllByUserId(userId);
+    return ResponseEntity
+        .status(HttpStatus.OK)
+        .body(readStatuses);
+  }
 }
